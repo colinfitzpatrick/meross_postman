@@ -1,0 +1,145 @@
+{
+	"info": {
+		"_postman_id": "427dfdff-0286-4120-b863-e55789304c9f",
+		"name": "Meross",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "MSS210",
+			"item": [
+				{
+					"name": "Set MQTT Server",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"header\": {\n        \"method\": \"SET\",\n        \"namespace\": \"Appliance.Config.Key\",\n        \"messageId\": \"{{messageId}}\",\n        \"timestamp\": {{timestamp}},\n        \"sign\": \"{{sign}}\"\n    },\n    \"payload\": {\n        \"key\": {\n            \"gateway\": {\n                \"host\": \"{{MQTT_HOST}}\",\n                \"port\": \"{{MQTT_PORT}}\"\n            },\n            \"key\": \"\",\n            \"userId\": \"\"\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://10.10.10.1/config",
+							"protocol": "http",
+							"host": [
+								"10",
+								"10",
+								"10",
+								"1"
+							],
+							"path": [
+								"config"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Set Wifi",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"SSID_B64 = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(pm.environment.get(\"SSID\")))",
+									"PASSWORD_B64 = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(pm.environment.get(\"WIFI_PASSWORD\")))",
+									"",
+									"console.log(\"SSID \" + SSID_B64);",
+									"console.log(\"PASSWORD \" + PASSWORD_B64);",
+									"",
+									"pm.variables.set(\"SSID_B64\", SSID_B64);",
+									"pm.variables.set(\"PASSWORD_B64\", PASSWORD_B64);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "",
+								"type": "text",
+								"value": "",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"header\": {\n        \"method\": \"SET\",\n        \"namespace\": \"Appliance.Config.Wifi\",\n        \"messageId\": \"{{messageId}}\",\n        \"timestamp\": {{timestamp}},\n        \"sign\": \"{{sign}}\",\n        \"from\": \"http:/10.10.10.1/config\",\n        \"payloadVersion\": 1\n    },\n    \"payload\": {\n        \"wifi\": {\n            \"ssid\": \"{{SSID_B64}}\",\n            \"password\": \"{{PASSWORD_B64}}\",\n            \"cipher\": 3,\n            \"encryption\": 6\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://10.10.10.1/config",
+							"protocol": "http",
+							"host": [
+								"10",
+								"10",
+								"10",
+								"1"
+							],
+							"path": [
+								"config"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"random = Math.random()*165343|0;",
+					"messageId = random.toString();",
+					"console.log(messageId);",
+					"pm.variables.set(\"messageId\",messageId);",
+					"",
+					"timestamp = Math.floor(Date.now() / 1000).toString();",
+					"console.log(timestamp);",
+					"pm.variables.set(\"timestamp\",timestamp);",
+					"",
+					"sign = CryptoJS.MD5(messageId+timestamp).toString();",
+					"pm.variables.set(\"sign\",sign);",
+					"",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"pm.test(\"Status code is 200\", function(){",
+					"    pm.response.to.have.status(200);",
+					"})",
+					"",
+					"//pm.test(\"Valid signature\", () => {",
+					"//    const responseJson = pm.response.json();",
+					"//    pm.expect( CryptoJS.MD5( responseJson.header.messageId + responseJson.header.timestamp)).to.eql(responseJson.header.sign);",
+					"//})"
+				]
+			}
+		}
+	]
+}
